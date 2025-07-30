@@ -65,3 +65,6 @@ server/config.env
 # Temporary files
 *.tmp
 *.temp
+
+# Local Netlify folder
+.netlify

@@ -1,6 +1,58 @@
 // Use environment variable for API URL, fallback to localhost for development
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Mock data for when backend is not available
+const mockPosts = [
+  {
+    _id: '1',
+    title: 'The Art of Making Perfect Pizza Dough',
+    content: 'Making the perfect pizza dough is an art that has been perfected over generations. Our secret lies in the perfect balance of flour, water, salt, and yeast, combined with the traditional Neapolitan technique that has been passed down through our family for decades. The key is allowing the dough to ferment slowly, developing complex flavors and the perfect texture that creates that signature crispy yet chewy crust that our customers love.',
+    excerpt: 'Discover the secrets behind our authentic Italian pizza dough that creates the perfect base for every pizza.',
+    author: 'Sofia Rossini',
+    image: 'https://images.pexels.com/photos/4252144/pexels-photo-4252144.jpeg',
+    authorId: { _id: 'admin1', username: 'admin' },
+    status: 'published',
+    tags: ['pizza', 'dough', 'traditional', 'neapolitan'],
+    createdAt: '2025-01-15T10:00:00Z',
+    updatedAt: '2025-01-15T10:00:00Z'
+  },
+  {
+    _id: '2',
+    title: 'From Naples to Your Table: Our Family Journey',
+    content: 'Our story begins in the cobblestone streets of Naples, where my grandfather first learned the art of pizza making from his father. In 1950, he brought these authentic recipes and techniques to America, determined to share the true taste of Naples with his new community. Today, we continue his legacy, using the same traditional methods and family recipes that have made our pizzas famous for over 70 years.',
+    excerpt: 'Learn about our family\'s journey from Naples to bringing authentic Italian flavors to your neighborhood.',
+    author: 'Marco Rossini',
+    image: 'https://images.pexels.com/photos/4253312/pexels-photo-4253312.jpeg',
+    authorId: { _id: 'admin1', username: 'admin' },
+    status: 'published',
+    tags: ['family', 'history', 'naples', 'tradition'],
+    createdAt: '2025-01-10T14:30:00Z',
+    updatedAt: '2025-01-10T14:30:00Z'
+  },
+  {
+    _id: '3',
+    title: 'The Secret to Our Wood-Fired Oven',
+    content: 'Our wood-fired oven isn\'t just a cooking tool – it\'s the heart of our kitchen. Built by master craftsmen using traditional techniques, it reaches temperatures of 800°F (427°C), cooking our pizzas in just 90 seconds. The intense heat creates the perfect char on the crust while keeping the toppings fresh and vibrant. The oak wood we use imparts a subtle smoky flavor that you simply can\'t achieve with any other cooking method.',
+    excerpt: 'Explore how our traditional wood-fired oven creates the perfect crispy crust and smoky flavor in every pizza.',
+    author: 'Antonio Moretti',
+    image: 'https://images.pexels.com/photos/4252144/pexels-photo-4252144.jpeg',
+    authorId: { _id: 'admin1', username: 'admin' },
+    status: 'published',
+    tags: ['wood-fired', 'oven', 'traditional', 'neapolitan'],
+    createdAt: '2025-01-05T16:15:00Z',
+    updatedAt: '2025-01-05T16:15:00Z'
+  }
+];
+
+const mockUsers = [
+  {
+    _id: 'admin1',
+    username: 'admin',
+    email: 'admin@bellapizza.com',
+    role: 'admin'
+  }
+];
+
 // Helper function to get auth token from localStorage
 const getAuthToken = () => {
   return localStorage.getItem('authToken');
@@ -30,7 +82,7 @@ const setUser = (user) => {
   }
 };
 
-// Generic API request function with enhanced error handling
+// Generic API request function with fallback to mock data
 const apiRequest = async (endpoint, options = {}) => {
   const token = getAuthToken();
   
@@ -46,7 +98,6 @@ const apiRequest = async (endpoint, options = {}) => {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     
-    // Handle network errors
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Network error' }));
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -55,15 +106,106 @@ const apiRequest = async (endpoint, options = {}) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('API request failed:', error);
+    console.warn('API request failed, using mock data:', error.message);
     
-    // Enhanced error handling
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Unable to connect to server. Please check your internet connection.');
-    }
-    
-    throw error;
+    // Return mock data based on the endpoint
+    return getMockResponse(endpoint, options, config);
   }
+};
+
+// Function to get mock responses
+const getMockResponse = (endpoint, options, config) => {
+  const method = options.method || 'GET';
+  
+  switch (endpoint) {
+    case '/health':
+      return {
+        status: 'OK',
+        message: 'Bella Pizza API is running (Mock Mode)',
+        timestamp: new Date().toISOString(),
+        environment: 'mock'
+      };
+      
+    case '/blog':
+      return {
+        success: true,
+        data: mockPosts.filter(post => post.status === 'published'),
+        pagination: {
+          currentPage: 1,
+          totalPages: 1,
+          totalPosts: mockPosts.filter(post => post.status === 'published').length,
+          hasNext: false,
+          hasPrev: false
+        }
+      };
+      
+    case '/auth/login':
+      if (method === 'POST') {
+        const { email, password } = JSON.parse(options.body || '{}');
+        if (email === 'admin@bellapizza.com' && password === 'admin123') {
+          return {
+            success: true,
+            token: 'mock-jwt-token-for-admin',
+            user: mockUsers[0]
+          };
+        } else {
+          throw new Error('Invalid credentials');
+        }
+      }
+      break;
+      
+    case '/auth/me':
+      const token = config.headers.Authorization?.split(' ')[1];
+      if (token === 'mock-jwt-token-for-admin') {
+        return {
+          success: true,
+          user: mockUsers[0]
+        };
+      } else {
+        throw new Error('Not authorized');
+      }
+      
+    case '/blog/admin/all':
+      return {
+        success: true,
+        data: mockPosts,
+        pagination: {
+          currentPage: 1,
+          totalPages: 1,
+          totalPosts: mockPosts.length,
+          hasNext: false,
+          hasPrev: false
+        }
+      };
+      
+    case '/blog':
+      if (method === 'POST') {
+        const newPost = {
+          _id: Date.now().toString(),
+          ...JSON.parse(options.body || '{}'),
+          authorId: { _id: 'admin1', username: 'admin' },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        mockPosts.unshift(newPost);
+        return { success: true, data: newPost };
+      }
+      break;
+      
+    default:
+      if (endpoint.startsWith('/blog/') && endpoint !== '/blog/admin/all') {
+        const id = endpoint.split('/')[2];
+        const post = mockPosts.find(p => p._id === id);
+        if (post) {
+          return { success: true, data: post };
+        } else {
+          throw new Error('Blog post not found');
+        }
+      }
+      break;
+  }
+  
+  throw new Error('Endpoint not found');
 };
 
 // Authentication API

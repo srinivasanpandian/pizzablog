@@ -13,8 +13,8 @@ const app = express();
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? [
-        'https://your-netlify-app.netlify.app', // Replace with your Netlify domain
-        'https://your-custom-domain.com',       // Replace with your custom domain
+        'https://boltblog.netlify.app',         // Your Netlify domain
+        'https://*.netlify.app',                // All Netlify subdomains
         'http://localhost:5173'                 // For local development
       ]
     : ['http://localhost:5173', 'http://localhost:3000'],
