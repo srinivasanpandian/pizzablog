@@ -1,0 +1,58 @@
+{
+  "build": {
+    "command": "npm run build",
+    "publish": "dist",
+    "environment": {
+      "NODE_VERSION": "18"
+    }
+  },
+  "redirects": [
+    {
+      "from": "/*",
+      "to": "/index.html",
+      "status": 200
+    }
+  ],
+  "headers": [
+    {
+      "for": "/*",
+      "values": {
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+      }
+    },
+    {
+      "for": "/assets/*",
+      "values": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "for": "*.jpg",
+      "values": {
+        "Cache-Control": "public, max-age=31536000"
+      }
+    },
+    {
+      "for": "*.png",
+      "values": {
+        "Cache-Control": "public, max-age=31536000"
+      }
+    },
+    {
+      "for": "*.gif",
+      "values": {
+        "Cache-Control": "public, max-age=31536000"
+      }
+    },
+    {
+      "for": "*.svg",
+      "values": {
+        "Cache-Control": "public, max-age=31536000"
+      }
+    }
+  ]
+} 
